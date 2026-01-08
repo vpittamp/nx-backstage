@@ -51,7 +51,7 @@
       description = "Visualize project dependency graph";
     };
     build-push = {
-      exec = "./scripts/build-push.sh";
+      exec = ''./scripts/build-push.sh "$@"'';
       description = "Build and push image to Gitea (use: build-push [--trigger-kargo] VERSION)";
     };
   };
