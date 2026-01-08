@@ -3,6 +3,7 @@
 {
   packages = [
     pkgs.git
+    pkgs.jq
     # Build tools for native Node.js modules
     pkgs.gnumake
     pkgs.gcc
@@ -49,6 +50,10 @@
       exec = "npx nx graph";
       description = "Visualize project dependency graph";
     };
+    build-push = {
+      exec = "./scripts/build-push.sh";
+      description = "Build and push image to Gitea (use: build-push [--trigger-kargo] VERSION)";
+    };
   };
 
   enterShell = ''
@@ -63,6 +68,7 @@
     echo "  build-backend     - Build backend bundle"
     echo "  docker-build      - Build Docker image"
     echo "  docker-run        - Run Docker container"
+    echo "  build-push VERSION [--trigger-kargo] - Build & push to Gitea"
     echo "  nx-graph          - Visualize dependencies"
   '';
 }
