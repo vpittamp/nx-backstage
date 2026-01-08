@@ -150,9 +150,6 @@
       echo ""
       exec yarn workspace app start
     '';
-
-    # Simple local development (no K8s) - runs both frontend and backend locally
-    backstage-local.exec = "yarn dev";
   };
 
   scripts = {
