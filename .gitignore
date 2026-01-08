@@ -59,6 +59,10 @@ e2e-test-report/
 .devenv/
 .devenv.flake.nix
 devenv.lock
+.direnv/
+
+# DevSpace
+.devspace/
 
 
 
