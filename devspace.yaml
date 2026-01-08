@@ -1,0 +1,72 @@
+version: v2beta1
+name: nx-backstage
+
+# DevSpace development configuration for K8s-based backend development
+#
+# Architecture: Hot Module Replacement (HMR) development
+# - Frontend runs LOCALLY with webpack-dev-server (localhost:3000) - instant HMR
+# - Backend runs in K8s with TypeScript watch mode (~5-10s iteration)
+# - Frontend proxies /api/* to K8s backend
+# - Full access to K8s APIs, Keycloak auth, observability stack
+#
+# Commands:
+#   devenv up              - Start all services (K8s backend + local frontend + OTEL)
+#   devspace enter         - Shell into K8s dev container
+#   devspace reset pods    - Revert to production image (keeps node_modules PVC)
+#   devspace purge         - Full cleanup (deletes PVC and all state)
+#
+# Access:
+#   Frontend (HMR): https://localhost:3000
+#   Backend API:    https://backstage.cnoe.localtest.me:8443/api
+
+dev:
+  app:
+    namespace: backstage
+    labelSelector:
+      app: backstage
+    container: backstage
+    # Use production image as dev base - DevSpace will sync local files
+    devImage: gitea.cnoe.localtest.me:8443/giteaadmin/backstage:latest
+    workingDir: /app
+
+    # Backend-only mode: frontend runs locally with HMR
+    # Wait for DevSpace sync to complete, then start backend with watch mode
+    command: ["bash", "-c", "echo 'Waiting for DevSpace file sync...' && while [ ! -f /app/yarn.lock ] || [ ! -f /app/package.json ]; do sleep 1; done && echo 'Files synced, installing dependencies...' && cd /app && yarn install && echo 'Starting TypeScript watch...' && (yarn tsc --build --watch &) && sleep 3 && echo 'Starting backend...' && exec yarn workspace backend start"]
+
+    # Stream logs instead of interactive terminal (enables running from devenv)
+    logs:
+      lastLines: 100
+
+    # Persist node_modules across restarts for faster startup
+    persistPaths:
+      - path: /tmp
+      - path: /app/node_modules
+
+    env:
+      - name: NODE_TLS_REJECT_UNAUTHORIZED
+        value: "0"
+      - name: NODE_OPTIONS
+        value: "--no-node-snapshot"
+
+    # Backend port
+    ports:
+      - port: "7007"
+
+    # Sync local files to K8s container
+    sync:
+      - path: ./:/app
+        excludePaths:
+          - node_modules/
+          - "**/node_modules/"
+          - .git/
+          - .devenv/
+          - .direnv/
+          - .nx/
+          - .yarn/cache/
+          - .yarn/unplugged/
+          - .yarn/install-state.gz
+          - coverage/
+          - dist/
+          - dist-types/
+          - packages/app/dist/  # Frontend runs locally with HMR
+          - packages/backend/dist/
