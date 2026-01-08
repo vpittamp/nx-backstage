@@ -4,6 +4,7 @@
   packages = [
     pkgs.git
     pkgs.jq
+    pkgs.kubectl
     # Build tools for native Node.js modules
     pkgs.gnumake
     pkgs.gcc

@@ -121,14 +121,22 @@ if [[ "$TRIGGER_KARGO" == "true" ]]; then
     echo ""
     echo ">>> Triggering Kargo warehouse refresh..."
 
-    if ! command -v kargo &> /dev/null; then
-        echo "Error: kargo CLI not found" >&2
-        echo "Install kargo CLI or trigger manually:" >&2
+    if command -v kargo &> /dev/null; then
+        # Use kargo CLI if available
+        kargo refresh warehouse "$KARGO_WAREHOUSE" -n "$KARGO_NAMESPACE"
+    elif command -v kubectl &> /dev/null; then
+        # Fallback to kubectl annotation
+        REFRESH_TOKEN=$(date +%s)
+        kubectl annotate warehouse "$KARGO_WAREHOUSE" \
+            -n "$KARGO_NAMESPACE" \
+            kargo.akuity.io/refresh="$REFRESH_TOKEN" \
+            --overwrite
+    else
+        echo "Error: Neither kargo nor kubectl CLI found" >&2
+        echo "Install one of them or trigger manually:" >&2
         echo "  kargo refresh warehouse $KARGO_WAREHOUSE -n $KARGO_NAMESPACE" >&2
         exit 1
     fi
-
-    kargo refresh warehouse "$KARGO_WAREHOUSE" -n "$KARGO_NAMESPACE"
 
     echo ">>> Kargo warehouse refresh triggered"
     echo "    Warehouse: $KARGO_WAREHOUSE"
